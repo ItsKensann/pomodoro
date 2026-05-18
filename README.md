@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ♪ lofi.pomodoro ♪
 
-## Getting Started
+A pixel y2k lofi pomodoro app for nighttime study sessions. Built with Next.js 15 (App Router), TypeScript, and Tailwind v4.
 
-First, run the development server:
+## Features
+
+- **Pomodoro timer** with focus / short break / long break phases
+  - Drift-free wall-clock timing — survives tab backgrounding accurately
+  - Auto-advance between phases (optional)
+  - Skip phase, reset, pause/resume
+- **Task list** — add, check, delete; persists to localStorage
+- **Custom durations** — tweak each phase length and long-break interval
+- **Lofi music + chime** - YouTube lofi radio plus optional local chime
+- **Nighttime y2k aesthetic** — pixel font, Win98-style window panels, animated starfield, sleeping pixel cat mascot
+- **Keyboard shortcuts** — `Space` to start/pause, `R` to reset
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Audio
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Lofi music streams through the in-page YouTube radio player. No local lofi audio file, Spotify auth, API key, or music asset is required.
 
-## Learn More
+The app can use one optional local file in `public/audio/`:
 
-To learn more about Next.js, take a look at the following resources:
+- `chime.mp3` - short chime played at session end
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+If `chime.mp3` is missing, chime playback is silently skipped.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech notes
 
-## Deploy on Vercel
+- **Tailwind v4** with CSS-based `@theme` in `app/globals.css`
+- **Fonts** via `next/font/google` — Press Start 2P (display) + VT323 (body)
+- **State** is plain React + custom hooks; no external store
+- **Persistence** is localStorage with hydration-safe reads
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/
+  layout.tsx          fonts, metadata
+  page.tsx            wires together everything
+  globals.css         tailwind + palette tokens
+components/
+  Window.tsx          beveled y2k window chrome
+  PixelButton.tsx     chunky pixel button
+  PomodoroTimer.tsx   timer UI
+  TaskList.tsx        task UI
+  SettingsPanel.tsx   settings UI
+  Starfield.tsx       animated nighttime background
+  Mascot.tsx          sleeping pixel cat (SVG)
+  AudioController.tsx audio context + chime player
+  LofiRadio.tsx       YouTube lofi radio window
+hooks/
+  useTimer.ts         drift-free timer state machine
+  useLocalStorage.ts  hydration-safe persisted state
+  useTasks.ts         task CRUD
+lib/
+  types.ts            Phase, Settings, Task
+  defaults.ts         DEFAULT_SETTINGS, phase helpers
+```

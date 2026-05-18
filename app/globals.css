@@ -1,26 +1,112 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-night: #15102b;
+  --color-night-deep: #0a0717;
+  --color-panel: #2d1f4f;
+  --color-panel-soft: #3a2a63;
+  --color-edge-light: #6a4ca8;
+  --color-edge-dark: #0e0820;
+  --color-pink: #ff6ec7;
+  --color-pink-deep: #c43a8c;
+  --color-cyan: #6ee7ff;
+  --color-cream: #f5e6d3;
+  --color-moon: #ffe79a;
+  --color-mauve: #b794f6;
+
+  --font-pixel: var(--font-pixel), "Courier New", monospace;
+  --font-mono: var(--font-mono), "Courier New", monospace;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-night-deep);
+  color: var(--color-cream);
+  font-family: var(--font-mono);
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
+
+.font-pixel {
+  font-family: var(--font-pixel);
+  letter-spacing: 0.04em;
+}
+
+.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Win98-style beveled panel, recolored for the night theme.
+   Outer: light top/left, dark bottom/right. */
+.bevel-out {
+  border-top: 3px solid var(--color-edge-light);
+  border-left: 3px solid var(--color-edge-light);
+  border-right: 3px solid var(--color-edge-dark);
+  border-bottom: 3px solid var(--color-edge-dark);
+  box-shadow:
+    inset 1px 1px 0 0 rgba(255, 255, 255, 0.08),
+    4px 4px 0 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Pressed/inset look (sunken). */
+.bevel-in {
+  border-top: 3px solid var(--color-edge-dark);
+  border-left: 3px solid var(--color-edge-dark);
+  border-right: 3px solid var(--color-edge-light);
+  border-bottom: 3px solid var(--color-edge-light);
+}
+
+/* Twinkle for starfield dots. */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.4); }
+}
+
+@keyframes drift {
+  from { transform: translateX(-10%); }
+  to { transform: translateX(110%); }
+}
+
+/* Sleeping mascot: rise of "z". */
+@keyframes zzz-rise {
+  0% { opacity: 0; transform: translate(0, 0) scale(1); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(18px, -28px) scale(1.3); }
+}
+
+/* Subtle breathing for the mascot body. */
+@keyframes breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* Title bar gradient pulse (very subtle, y2k feel). */
+@keyframes title-shimmer {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(-15deg); }
+}
+
+/* Selection styling to match palette. */
+::selection {
+  background: var(--color-pink);
+  color: var(--color-night-deep);
+}
+
+/* Custom scrollbar (webkit only — degrades fine). */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--color-night); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-panel);
+  border: 2px solid var(--color-edge-light);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-panel-soft); }
+
+/* Remove number input spin buttons (settings inputs look cleaner). */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
