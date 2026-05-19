@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Settings } from "@/lib/types";
 import { Window } from "./Window";
 import { PixelButton } from "./PixelButton";
@@ -101,14 +102,36 @@ function NumberRow({
   onChange: (v: string) => void;
   suffix: string;
 }) {
+  const [draft, setDraft] = useState(String(value));
+  const [lastSyncedValue, setLastSyncedValue] = useState(value);
+
+  if (value !== lastSyncedValue) {
+    setLastSyncedValue(value);
+    setDraft(String(value));
+  }
+
+  function commit() {
+    const trimmed = draft.trim();
+    if (trimmed === "" || Number.isNaN(parseInt(trimmed, 10))) {
+      setDraft(String(value));
+      return;
+    }
+    onChange(trimmed);
+  }
+
   return (
     <label className="flex items-center justify-between gap-3">
       <span className="text-cream">{label}</span>
       <span className="flex items-center gap-2">
         <input
           type="number"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onFocus={(e) => e.currentTarget.select()}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+          }}
           className="bevel-in bg-night-deep text-cyan w-16 px-2 py-1 text-right font-pixel text-[10px] focus:outline-none focus:text-pink"
         />
         <span className="text-mauve text-[8px]">{suffix}</span>

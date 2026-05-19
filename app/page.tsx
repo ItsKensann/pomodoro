@@ -8,6 +8,10 @@ import { Mascot } from "@/components/Mascot";
 import { AudioController, useAudio } from "@/components/AudioController";
 import { LofiRadio } from "@/components/LofiRadio";
 import { Taskbar } from "@/components/Taskbar";
+import {
+  WindowManagerProvider,
+  ResetWindowsHint,
+} from "@/components/WindowManager";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTimer } from "@/hooks/useTimer";
 import { useTasks } from "@/hooks/useTasks";
@@ -24,7 +28,9 @@ export default function Home() {
     <>
       <Starfield />
       <AudioController soundOn={settings.soundOn}>
-        <AppContent settings={settings} setSettings={setSettings} />
+        <WindowManagerProvider>
+          <AppContent settings={settings} setSettings={setSettings} />
+        </WindowManagerProvider>
       </AudioController>
     </>
   );
@@ -78,6 +84,7 @@ function AppContent({
         </div>
       </div>
 
+      <ResetWindowsHint />
       {/* Keyboard hint footer — pinned at the bottom on all screen sizes */}
       <footer className="font-pixel text-[8px] text-mauve opacity-70 text-center shrink-0">
         [space] start/pause &nbsp;·&nbsp; [r] reset
