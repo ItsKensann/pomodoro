@@ -7,7 +7,6 @@ export const DEFAULT_SETTINGS: Settings = {
   longBreakInterval: 4,
   autoStart: false,
   soundOn: true,
-  musicOn: false,
 };
 
 export const PHASE_LABEL: Record<Phase, string> = {
@@ -31,4 +30,53 @@ export function minutesForPhase(phase: Phase, settings: Settings): number {
     case "longBreak":
       return settings.longBreakMinutes;
   }
+}
+
+function readNumber(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return fallback;
+  return Math.min(max, Math.max(min, Math.trunc(value)));
+}
+
+function readBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+export function normalizeSettings(value: unknown): Settings {
+  if (!value || typeof value !== "object") return DEFAULT_SETTINGS;
+
+  const saved = value as Record<string, unknown>;
+
+  return {
+    workMinutes: readNumber(
+      saved.workMinutes,
+      DEFAULT_SETTINGS.workMinutes,
+      1,
+      180,
+    ),
+    shortBreakMinutes: readNumber(
+      saved.shortBreakMinutes,
+      DEFAULT_SETTINGS.shortBreakMinutes,
+      1,
+      60,
+    ),
+    longBreakMinutes: readNumber(
+      saved.longBreakMinutes,
+      DEFAULT_SETTINGS.longBreakMinutes,
+      1,
+      60,
+    ),
+    longBreakInterval: readNumber(
+      saved.longBreakInterval,
+      DEFAULT_SETTINGS.longBreakInterval,
+      2,
+      10,
+    ),
+    autoStart: readBoolean(saved.autoStart, DEFAULT_SETTINGS.autoStart),
+    soundOn: readBoolean(saved.soundOn, DEFAULT_SETTINGS.soundOn),
+  };
 }

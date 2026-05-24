@@ -5,12 +5,11 @@ import type { Phase } from "@/lib/types";
 import { PHASE_ACCENT } from "@/lib/defaults";
 
 interface TaskbarProps {
-  musicOn: boolean;
   soundOn: boolean;
   activePhase: Phase;
 }
 
-export function Taskbar({ musicOn, soundOn, activePhase }: TaskbarProps) {
+export function Taskbar({ soundOn, activePhase }: TaskbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const startRef = useRef<HTMLDivElement | null>(null);
 
@@ -64,7 +63,6 @@ export function Taskbar({ musicOn, soundOn, activePhase }: TaskbarProps) {
       </div>
 
       <div className="bevel-in bg-night shrink-0 flex items-center gap-2 px-2 py-1">
-        <TrayIcon glyph="♫" on={musicOn} onColor="text-cyan" />
         <TrayIcon glyph="◈" on={soundOn} onColor="text-pink" />
         <span className="w-px h-3 bg-edge-light/40" aria-hidden />
         <Clock />

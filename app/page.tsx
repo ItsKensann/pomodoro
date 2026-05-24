@@ -6,7 +6,6 @@ import { TaskList } from "@/components/TaskList";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { Mascot } from "@/components/Mascot";
 import { AudioController, useAudio } from "@/components/AudioController";
-import { LofiRadio } from "@/components/LofiRadio";
 import { Taskbar } from "@/components/Taskbar";
 import {
   WindowManagerProvider,
@@ -15,13 +14,14 @@ import {
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useTimer } from "@/hooks/useTimer";
 import { useTasks } from "@/hooks/useTasks";
-import { DEFAULT_SETTINGS } from "@/lib/defaults";
+import { DEFAULT_SETTINGS, normalizeSettings } from "@/lib/defaults";
 import type { Settings } from "@/lib/types";
 
 export default function Home() {
   const [settings, setSettings] = useLocalStorage<Settings>(
     "pomodoro.settings.v1",
     DEFAULT_SETTINGS,
+    normalizeSettings,
   );
 
   return (
@@ -50,10 +50,6 @@ function AppContent({
     onPhaseComplete: () => playChime(),
   });
 
-  function handleMusicChange(musicOn: boolean) {
-    setSettings((s) => ({ ...s, musicOn }));
-  }
-
   return (
     <main className="lg:h-dvh lg:overflow-hidden w-full flex flex-col px-4 py-3 sm:py-4 gap-3">
       {/* Grid: title+mascot in row 1 (middle col); settings and tasks span both rows so their tops sit at the title's y-line on desktop */}
@@ -74,15 +70,10 @@ function AppContent({
           <SettingsPanel
             settings={settings}
             setSettings={setSettings}
-            onMusicChange={handleMusicChange}
           />
         </div>
         <div className="min-h-0 flex flex-col items-center gap-3 lg:col-start-2 lg:row-start-2">
           <PomodoroTimer timer={timer} />
-          <LofiRadio
-            musicOn={settings.musicOn}
-            onMusicChange={handleMusicChange}
-          />
         </div>
         <div className="min-h-0 lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:pt-60">
           <TaskList
@@ -103,7 +94,6 @@ function AppContent({
         <ResetWindowsHint />
       </div>
       <Taskbar
-        musicOn={settings.musicOn}
         soundOn={settings.soundOn}
         activePhase={timer.phase}
       />

@@ -9,7 +9,6 @@ export interface Settings {
   longBreakInterval: number;
   autoStart: boolean;
   soundOn: boolean;
-  musicOn: boolean;
 }
 
 export interface Task {

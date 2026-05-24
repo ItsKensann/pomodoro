@@ -8,4 +8,3 @@ Suggested royalty-free sources:
   - zapsplat.com
 
 The app will silently skip chime playback if the file is missing.
-Lofi music streams through YouTube using the in-page lofi.radio player.

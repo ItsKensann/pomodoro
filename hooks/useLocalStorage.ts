@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
+  deserialize?: (raw: unknown) => T,
 ): [T, (next: T | ((prev: T) => T)) => void, boolean] {
   const [value, setValue] = useState<T>(initialValue);
   const [hydrated, setHydrated] = useState(false);
@@ -19,15 +20,16 @@ export function useLocalStorage<T>(
     try {
       const raw = window.localStorage.getItem(key);
       if (raw != null) {
+        const parsed = JSON.parse(raw) as unknown;
         // Hydration-safe: SSR renders default, client swaps to stored value on mount.
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setValue(JSON.parse(raw) as T);
+        setValue(deserialize ? deserialize(parsed) : (parsed as T));
       }
     } catch {
       // ignore parse errors; keep default
     }
     setHydrated(true);
-  }, [key]);
+  }, [key, deserialize]);
 
   useEffect(() => {
     if (!hydrated) return;

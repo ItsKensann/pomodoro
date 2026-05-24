@@ -9,7 +9,6 @@ import { DEFAULT_SETTINGS } from "@/lib/defaults";
 interface SettingsPanelProps {
   settings: Settings;
   setSettings: (next: Settings | ((prev: Settings) => Settings)) => void;
-  onMusicChange: (musicOn: boolean) => void;
 }
 
 function clamp(n: number, min: number, max: number): number {
@@ -20,7 +19,6 @@ function clamp(n: number, min: number, max: number): number {
 export function SettingsPanel({
   settings,
   setSettings,
-  onMusicChange,
 }: SettingsPanelProps) {
   function updateNumber(
     key: keyof Settings,
@@ -75,11 +73,6 @@ export function SettingsPanel({
           label="chime sound"
           value={settings.soundOn}
           onToggle={() => toggle("soundOn")}
-        />
-        <ToggleRow
-          label="lofi music"
-          value={settings.musicOn}
-          onToggle={() => onMusicChange(!settings.musicOn)}
         />
 
         <div className="pt-2">

@@ -39,11 +39,11 @@ The latest `settings`, `phase`, `status`, `completedPomodoros`, and `onPhaseComp
 
 Hydration-safe pattern: the hook returns `initialValue` for SSR + first client render, then swaps to the localStorage value in a mount `useEffect` and exposes a `hydrated` boolean. Don't read `localStorage` during render or at hook init — it breaks hydration.
 
-Storage keys are versioned (`pomodoro.settings.v1`, `pomodoro.tasks.v1`); bump the suffix when changing the persisted shape.
+Storage keys are versioned (`pomodoro.settings.v1`, `pomodoro.tasks.v1`). Settings use `normalizeSettings` to preserve compatible saved values and drop obsolete fields after shape changes; bump the suffix only when existing values should reset.
 
 ### Audio (`components/AudioController.tsx`)
 
-A context provider mounts two hidden `<audio>` elements once (`/audio/lofi-loop.mp3`, `/audio/chime.mp3`) and exposes `playChime()` via `useAudio()`. Lofi play/pause is driven declaratively by the `musicOn` prop. `play()` promise rejections (autoplay block, missing asset) are swallowed — audio is best-effort, missing files must not break the app.
+A context provider mounts one hidden `<audio>` element once (`/audio/chime.mp3`) and exposes `playChime()` via `useAudio()`. `play()` promise rejections (autoplay block, missing asset) are swallowed — audio is best-effort, missing files must not break the app.
 
 Audio files are **not bundled**; users drop their own into `public/audio/`. See `public/audio/README.txt`.
 
