@@ -67,7 +67,8 @@ export function ResetWindowsHint() {
     <button
       type="button"
       onClick={manager.resetAll}
-      className="font-pixel text-[8px] text-pink opacity-80 hover:opacity-100 hover:text-cyan text-center shrink-0 cursor-pointer transition-colors"
+      className="font-pixel text-[8px] text-pink opacity-80 hover:opacity-100 hover:text-cyan shrink-0 cursor-pointer transition-colors"
+      style={{ animation: "fade-in 400ms ease-out" }}
     >
       » click to reset window positions «
     </button>

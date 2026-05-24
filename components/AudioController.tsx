@@ -9,11 +9,13 @@ import {
   type ReactNode,
 } from "react";
 
-interface AudioContextValue {
+interface AudioControllerValue {
   playChime: () => void;
 }
 
-const Ctx = createContext<AudioContextValue>({ playChime: () => {} });
+const Ctx = createContext<AudioControllerValue>({
+  playChime: () => {},
+});
 
 export function useAudio() {
   return useContext(Ctx);
@@ -25,7 +27,7 @@ interface AudioControllerProps {
 }
 
 /**
- * Mounts the chime <audio> element once, and exposes playChime() via context.
+ * Mounts the chime <audio> element once.
  *
  * Browsers block autoplay until a user gesture, so the first play() call
  * after a click will succeed; before that it may reject and we swallow it.

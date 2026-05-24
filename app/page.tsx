@@ -50,6 +50,10 @@ function AppContent({
     onPhaseComplete: () => playChime(),
   });
 
+  function handleMusicChange(musicOn: boolean) {
+    setSettings((s) => ({ ...s, musicOn }));
+  }
+
   return (
     <main className="lg:h-dvh lg:overflow-hidden w-full flex flex-col px-4 py-3 sm:py-4 gap-3">
       {/* Grid: title+mascot in row 1 (middle col); settings and tasks span both rows so their tops sit at the title's y-line on desktop */}
@@ -67,11 +71,18 @@ function AppContent({
           <Mascot asleep={timer.status !== "running"} width={72} height={45} />
         </div>
         <div className="min-h-0 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:pt-60">
-          <SettingsPanel settings={settings} setSettings={setSettings} />
+          <SettingsPanel
+            settings={settings}
+            setSettings={setSettings}
+            onMusicChange={handleMusicChange}
+          />
         </div>
         <div className="min-h-0 flex flex-col items-center gap-3 lg:col-start-2 lg:row-start-2">
           <PomodoroTimer timer={timer} />
-          <LofiRadio musicOn={settings.musicOn} />
+          <LofiRadio
+            musicOn={settings.musicOn}
+            onMusicChange={handleMusicChange}
+          />
         </div>
         <div className="min-h-0 lg:col-start-3 lg:row-start-1 lg:row-span-2 lg:pt-60">
           <TaskList
@@ -84,11 +95,13 @@ function AppContent({
         </div>
       </div>
 
-      <ResetWindowsHint />
       {/* Keyboard hint footer — pinned at the bottom on all screen sizes */}
       <footer className="font-pixel text-[8px] text-mauve opacity-70 text-center shrink-0">
         [space] start/pause &nbsp;·&nbsp; [r] reset
       </footer>
+      <div className="flex justify-end shrink-0">
+        <ResetWindowsHint />
+      </div>
       <Taskbar
         musicOn={settings.musicOn}
         soundOn={settings.soundOn}

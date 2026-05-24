@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Window } from "./Window";
 
 const LOFI_VIDEO_ID = "jfKfPfyJRdk";
+const PLAYBACK_START_TIMEOUT_MS = 5000;
 const YOUTUBE_API_SCRIPT_ID = "youtube-iframe-api";
 const YOUTUBE_API_SRC = "https://www.youtube.com/iframe_api";
+const YOUTUBE_PLAYER_STATE = {
+  ENDED: 0,
+  PLAYING: 1,
+  PAUSED: 2,
+} as const;
 
 interface YouTubePlayer {
   playVideo: () => void;
@@ -18,6 +24,10 @@ interface YouTubePlayerEvent {
   target: YouTubePlayer;
 }
 
+interface YouTubePlayerStateEvent extends YouTubePlayerEvent {
+  data: number;
+}
+
 interface YouTubePlayerOptions {
   videoId: string;
   width: string;
@@ -25,6 +35,8 @@ interface YouTubePlayerOptions {
   playerVars: Record<string, number | string>;
   events: {
     onReady: (event: YouTubePlayerEvent) => void;
+    onStateChange: (event: YouTubePlayerStateEvent) => void;
+    onError: () => void;
   };
 }
 
@@ -102,17 +114,68 @@ function tryPlayback(action: () => void) {
 
 interface LofiRadioProps {
   musicOn: boolean;
+  onMusicChange: (musicOn: boolean) => void;
 }
 
-export function LofiRadio({ musicOn }: LofiRadioProps) {
+export function LofiRadio({ musicOn, onMusicChange }: LofiRadioProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const desiredMusicOnRef = useRef(musicOn);
+  const onMusicChangeRef = useRef(onMusicChange);
+  const playbackTimeoutRef = useRef<number | null>(null);
+  const playAttemptRef = useRef(0);
   const [isReady, setIsReady] = useState(false);
+  const [thumbnailOk, setThumbnailOk] = useState(true);
 
   useEffect(() => {
     desiredMusicOnRef.current = musicOn;
   }, [musicOn]);
+
+  useEffect(() => {
+    onMusicChangeRef.current = onMusicChange;
+  }, [onMusicChange]);
+
+  const clearPlaybackTimeout = useCallback(() => {
+    if (playbackTimeoutRef.current == null) return;
+
+    window.clearTimeout(playbackTimeoutRef.current);
+    playbackTimeoutRef.current = null;
+  }, []);
+
+  const failPlaybackRequest = useCallback(() => {
+    clearPlaybackTimeout();
+
+    if (!desiredMusicOnRef.current) return;
+
+    desiredMusicOnRef.current = false;
+    onMusicChangeRef.current(false);
+  }, [clearPlaybackTimeout]);
+
+  const requestPlayback = useCallback(
+    (player: YouTubePlayer | null) => {
+      clearPlaybackTimeout();
+
+      const attempt = playAttemptRef.current + 1;
+      playAttemptRef.current = attempt;
+      playbackTimeoutRef.current = window.setTimeout(() => {
+        if (
+          desiredMusicOnRef.current &&
+          playAttemptRef.current === attempt
+        ) {
+          failPlaybackRequest();
+        }
+      }, PLAYBACK_START_TIMEOUT_MS);
+
+      if (player) {
+        tryPlayback(() => player.playVideo());
+      }
+    },
+    [clearPlaybackTimeout, failPlaybackRequest],
+  );
+
+  const pausePlayback = useCallback((player: YouTubePlayer) => {
+    tryPlayback(() => player.pauseVideo());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +190,7 @@ export function LofiRadio({ musicOn }: LofiRadioProps) {
           height: "100%",
           playerVars: {
             autoplay: 0,
-            controls: 1,
+            controls: 0,
             enablejsapi: 1,
             playsinline: 1,
             rel: 0,
@@ -147,7 +210,31 @@ export function LofiRadio({ musicOn }: LofiRadioProps) {
               setIsReady(true);
 
               if (desiredMusicOnRef.current) {
-                tryPlayback(() => event.target.playVideo());
+                requestPlayback(event.target);
+              }
+            },
+            onStateChange: (event) => {
+              if (event.data === YOUTUBE_PLAYER_STATE.PLAYING) {
+                clearPlaybackTimeout();
+
+                if (!desiredMusicOnRef.current) {
+                  pausePlayback(event.target);
+                }
+                return;
+              }
+
+              if (
+                desiredMusicOnRef.current &&
+                (event.data === YOUTUBE_PLAYER_STATE.ENDED ||
+                  event.data === YOUTUBE_PLAYER_STATE.PAUSED) &&
+                playbackTimeoutRef.current == null
+              ) {
+                failPlaybackRequest();
+              }
+            },
+            onError: () => {
+              if (desiredMusicOnRef.current) {
+                failPlaybackRequest();
               }
             },
           },
@@ -156,37 +243,123 @@ export function LofiRadio({ musicOn }: LofiRadioProps) {
         playerRef.current = player;
       })
       .catch(() => {
+        if (!cancelled && desiredMusicOnRef.current) {
+          failPlaybackRequest();
+        }
         /* Leave the radio window mounted even if the third-party script fails. */
       });
 
     return () => {
       cancelled = true;
+      clearPlaybackTimeout();
       playerRef.current?.destroy();
       playerRef.current = null;
     };
-  }, []);
+  }, [
+    clearPlaybackTimeout,
+    failPlaybackRequest,
+    pausePlayback,
+    requestPlayback,
+  ]);
 
   useEffect(() => {
     const player = playerRef.current;
-    if (!player || !isReady) return;
 
     if (musicOn) {
-      tryPlayback(() => player.playVideo());
+      requestPlayback(player && isReady ? player : null);
     } else {
-      tryPlayback(() => player.pauseVideo());
+      clearPlaybackTimeout();
+
+      if (player && isReady) {
+        pausePlayback(player);
+      }
     }
-  }, [isReady, musicOn]);
+  }, [
+    clearPlaybackTimeout,
+    isReady,
+    musicOn,
+    pausePlayback,
+    requestPlayback,
+  ]);
+
+  function handleToggleMusic() {
+    const nextMusicOn = !musicOn;
+    desiredMusicOnRef.current = nextMusicOn;
+
+    const player = playerRef.current;
+    if (nextMusicOn) {
+      onMusicChange(true);
+      if (player && isReady) {
+        requestPlayback(player);
+      } else {
+        requestPlayback(null);
+      }
+    } else {
+      clearPlaybackTimeout();
+      if (player && isReady) {
+        pausePlayback(player);
+      }
+      onMusicChange(false);
+    }
+  }
 
   return (
     <Window
       title="lofi.radio"
       accent="cyan"
-      className="w-full max-w-[360px] min-w-[200px]"
+      className="w-full max-w-[420px] min-w-[240px]"
       bodyClassName="p-2"
     >
-      <div className="bevel-in bg-night-deep min-w-[200px] min-h-[200px] aspect-square overflow-hidden [&_iframe]:block [&_iframe]:h-full [&_iframe]:w-full">
-        <div ref={mountRef} className="h-full w-full" />
+      <div className="bevel-in bg-night-deep aspect-video w-full min-w-[240px] overflow-hidden relative">
+        <div
+          ref={mountRef}
+          className="absolute inset-0 h-full w-full opacity-0 pointer-events-none"
+          aria-hidden
+        />
+        <button
+          type="button"
+          onClick={handleToggleMusic}
+          aria-label={musicOn ? "Pause lofi radio" : "Play lofi radio"}
+          aria-pressed={musicOn}
+          className="absolute inset-0 w-full h-full cursor-pointer group focus:outline-none"
+        >
+          {thumbnailOk ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/lofi/thumbnail.png"
+              alt=""
+              onError={() => setThumbnailOk(false)}
+              className="absolute inset-0 w-full h-full object-cover pixelated"
+            />
+          ) : (
+            <ThumbnailPlaceholder />
+          )}
+          <span
+            aria-hidden
+            className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity"
+          >
+            <span className="font-pixel text-cream text-xl drop-shadow-[2px_2px_0_rgba(0,0,0,0.8)]">
+              {musicOn ? "❚❚" : "▶"}
+            </span>
+          </span>
+        </button>
       </div>
     </Window>
+  );
+}
+
+function ThumbnailPlaceholder() {
+  return (
+    <div className="absolute inset-0 bg-gradient-to-br from-panel via-pink-deep to-night flex items-center justify-center">
+      <span
+        className="font-pixel text-cream text-sm"
+        style={{
+          textShadow:
+            "1px 1px 0 var(--color-pink-deep), 2px 2px 0 var(--color-night-deep)",
+        }}
+      >
+        ♪ lofi.radio
+      </span>
+    </div>
   );
 }

@@ -88,6 +88,12 @@ body {
   50% { filter: hue-rotate(-15deg); }
 }
 
+/* Fade-in for the reset-windows hint. */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Selection styling to match palette. */
 ::selection {
   background: var(--color-pink);

@@ -9,6 +9,7 @@ import { DEFAULT_SETTINGS } from "@/lib/defaults";
 interface SettingsPanelProps {
   settings: Settings;
   setSettings: (next: Settings | ((prev: Settings) => Settings)) => void;
+  onMusicChange: (musicOn: boolean) => void;
 }
 
 function clamp(n: number, min: number, max: number): number {
@@ -16,7 +17,11 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
-export function SettingsPanel({ settings, setSettings }: SettingsPanelProps) {
+export function SettingsPanel({
+  settings,
+  setSettings,
+  onMusicChange,
+}: SettingsPanelProps) {
   function updateNumber(
     key: keyof Settings,
     value: string,
@@ -74,7 +79,7 @@ export function SettingsPanel({ settings, setSettings }: SettingsPanelProps) {
         <ToggleRow
           label="lofi music"
           value={settings.musicOn}
-          onToggle={() => toggle("musicOn")}
+          onToggle={() => onMusicChange(!settings.musicOn)}
         />
 
         <div className="pt-2">
