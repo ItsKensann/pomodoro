@@ -6,6 +6,8 @@ import { PHASE_LABEL } from "@/lib/defaults";
 import { Window } from "./Window";
 import { PixelButton } from "./PixelButton";
 
+const DEFAULT_DOCUMENT_TITLE = "pomodoro.exe ◆ lofi study";
+
 interface PomodoroTimerProps {
   timer: UseTimerReturn;
 }
@@ -30,6 +32,14 @@ export function PomodoroTimer({ timer }: PomodoroTimerProps) {
     skip,
     setPhase,
   } = timer;
+
+  useEffect(() => {
+    document.title = `${formatTime(remainingMs)} ${PHASE_LABEL[phase]} - pomodoro.exe`;
+
+    return () => {
+      document.title = DEFAULT_DOCUMENT_TITLE;
+    };
+  }, [phase, remainingMs]);
 
   // Keyboard shortcuts: space = toggle start/pause, R = reset.
   useEffect(() => {
