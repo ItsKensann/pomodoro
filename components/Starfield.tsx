@@ -93,7 +93,7 @@ export function Starfield() {
 
       {/* big moon */}
       <div
-        className="absolute top-8 right-10 sm:right-20 w-20 h-20 sm:w-24 sm:h-24 pixelated"
+        className="absolute top-2 right-2 w-12 h-12 sm:top-8 sm:right-10 sm:w-20 sm:h-20 lg:right-20 lg:w-24 lg:h-24 pixelated"
         style={{
           background:
             "radial-gradient(circle at 35% 35%, #fff5d4 0%, var(--color-moon) 55%, #d4b766 100%)",

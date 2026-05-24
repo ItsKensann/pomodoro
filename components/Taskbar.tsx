@@ -52,7 +52,7 @@ export function Taskbar({ soundOn, activePhase }: TaskbarProps) {
         {menuOpen && <StartMenu onClose={() => setMenuOpen(false)} />}
       </div>
 
-      <div className="flex-1 min-w-0 flex items-center gap-1 overflow-x-auto">
+      <div className="flex-1 min-w-0 hidden sm:flex items-center gap-1 overflow-x-auto">
         <AppTab
           label="◆ pomodoro.exe"
           active
@@ -61,6 +61,8 @@ export function Taskbar({ soundOn, activePhase }: TaskbarProps) {
         <AppTab label="◆ to-do.txt" />
         <AppTab label="◆ settings.cfg" />
       </div>
+      {/* On phones the tab row is hidden — keep a spacer so the tray stays right-aligned. */}
+      <div className="flex-1 sm:hidden" aria-hidden />
 
       <div className="bevel-in bg-night shrink-0 flex items-center gap-2 px-2 py-1">
         <TrayIcon glyph="◈" on={soundOn} onColor="text-pink" />

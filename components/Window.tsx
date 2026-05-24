@@ -5,6 +5,7 @@ import {
   useId,
   useRef,
   useState,
+  useSyncExternalStore,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
@@ -28,6 +29,20 @@ const accentMap: Record<NonNullable<WindowProps["accent"]>, string> = {
 // Module-level counter so the most recently dragged window stacks on top.
 let topZ = 10;
 
+// Shared media-query subscription for the lg breakpoint (drag is desktop-only).
+const DESKTOP_MQ = "(min-width: 1024px)";
+function subscribeDesktopMq(callback: () => void) {
+  const mq = window.matchMedia(DESKTOP_MQ);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+function getDesktopMqSnapshot() {
+  return window.matchMedia(DESKTOP_MQ).matches;
+}
+function getDesktopMqServerSnapshot() {
+  return false;
+}
+
 export function Window({
   title,
   children,
@@ -45,12 +60,28 @@ export function Window({
   const [lastSeenReset, setLastSeenReset] = useState(resetSignal);
   const [z, setZ] = useState(10);
   const [dragging, setDragging] = useState(false);
+  // Drag is desktop-only — below `lg` (1024px) the title bar is decorative.
+  const canDrag = useSyncExternalStore(
+    subscribeDesktopMq,
+    getDesktopMqSnapshot,
+    getDesktopMqServerSnapshot,
+  );
+  const [lastSeenCanDrag, setLastSeenCanDrag] = useState(canDrag);
 
   // Snap back to origin when the manager broadcasts a reset.
   // Render-time comparison is the React-recommended pattern for "react to a prop change".
   if (lastSeenReset !== resetSignal) {
     setLastSeenReset(resetSignal);
     if (offset.x !== 0 || offset.y !== 0) setOffset({ x: 0, y: 0 });
+  }
+
+  // When the viewport drops below lg, snap any dragged window back to origin
+  // so it can't linger off-screen on a phone.
+  if (lastSeenCanDrag !== canDrag) {
+    setLastSeenCanDrag(canDrag);
+    if (!canDrag && (offset.x !== 0 || offset.y !== 0)) {
+      setOffset({ x: 0, y: 0 });
+    }
   }
   const dragStateRef = useRef<{
     pointerId: number;
@@ -66,6 +97,7 @@ export function Window({
   }
 
   function onTitlePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!canDrag) return;
     // Don't start drag from chrome buttons (close/min/max).
     if ((e.target as HTMLElement).closest("button")) return;
     if (e.button !== 0 && e.pointerType === "mouse") return;
@@ -130,8 +162,10 @@ export function Window({
     >
       <div
         onPointerDown={onTitlePointerDown}
-        className={`flex items-center justify-between px-2 py-1.5 bg-gradient-to-r ${accentMap[accent]} border-b-2 border-edge-dark select-none touch-none ${
-          dragging ? "cursor-grabbing" : "cursor-grab"
+        className={`flex items-center justify-between px-2 py-1.5 bg-gradient-to-r ${accentMap[accent]} border-b-2 border-edge-dark select-none ${
+          canDrag
+            ? `touch-none ${dragging ? "cursor-grabbing" : "cursor-grab"}`
+            : "cursor-default"
         }`}
       >
         <span className="font-pixel text-[10px] text-cream drop-shadow-[1px_1px_0_rgba(0,0,0,0.6)] truncate">
