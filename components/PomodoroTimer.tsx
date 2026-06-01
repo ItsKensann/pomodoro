@@ -6,7 +6,7 @@ import { PHASE_LABEL } from "@/lib/defaults";
 import { Window } from "./Window";
 import { PixelButton } from "./PixelButton";
 
-const DEFAULT_DOCUMENT_TITLE = "pomodoro.exe ◆ lofi study";
+const DEFAULT_DOCUMENT_TITLE = "pomodoro.exe";
 
 interface PomodoroTimerProps {
   timer: UseTimerReturn;

@@ -11,10 +11,12 @@ import {
 
 interface AudioControllerValue {
   playChime: () => void;
+  previewChime: () => void;
 }
 
 const Ctx = createContext<AudioControllerValue>({
   playChime: () => {},
+  previewChime: () => {},
 });
 
 export function useAudio() {
@@ -43,8 +45,7 @@ export function AudioController({
     soundOnRef.current = soundOn;
   }, [soundOn]);
 
-  const playChime = useCallback(() => {
-    if (!soundOnRef.current) return;
+  const playChimeNow = useCallback(() => {
     const el = chimeRef.current;
     if (!el) return;
     el.currentTime = 0;
@@ -57,11 +58,16 @@ export function AudioController({
     }
   }, []);
 
+  const playChime = useCallback(() => {
+    if (!soundOnRef.current) return;
+    playChimeNow();
+  }, [playChimeNow]);
+
   return (
-    <Ctx.Provider value={{ playChime }}>
+    <Ctx.Provider value={{ playChime, previewChime: playChimeNow }}>
       <audio
         ref={chimeRef}
-        src="/audio/chime.mp3"
+        src="/audio/chime.wav"
         preload="auto"
         aria-hidden
       />

@@ -9,6 +9,7 @@ import { DEFAULT_SETTINGS } from "@/lib/defaults";
 interface SettingsPanelProps {
   settings: Settings;
   setSettings: (next: Settings | ((prev: Settings) => Settings)) => void;
+  onTestChime: () => void;
 }
 
 function clamp(n: number, min: number, max: number): number {
@@ -19,6 +20,7 @@ function clamp(n: number, min: number, max: number): number {
 export function SettingsPanel({
   settings,
   setSettings,
+  onTestChime,
 }: SettingsPanelProps) {
   function updateNumber(
     key: keyof Settings,
@@ -69,11 +71,23 @@ export function SettingsPanel({
           value={settings.autoStart}
           onToggle={() => toggle("autoStart")}
         />
-        <ToggleRow
-          label="chime sound"
-          value={settings.soundOn}
-          onToggle={() => toggle("soundOn")}
-        />
+        <div className="flex items-center justify-between gap-3">
+          <ToggleRow
+            label="chime sound"
+            value={settings.soundOn}
+            onToggle={() => toggle("soundOn")}
+            className="flex-1"
+          />
+          <PixelButton
+            size="sm"
+            variant="accent"
+            type="button"
+            onClick={onTestChime}
+            aria-label="test chime sound"
+          >
+            test
+          </PixelButton>
+        </div>
 
         <div className="pt-2">
           <PixelButton
@@ -142,23 +156,23 @@ function ToggleRow({
   label,
   value,
   onToggle,
+  className = "",
 }: {
   label: string;
   value: boolean;
   onToggle: () => void;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="flex items-center justify-between gap-3 cursor-pointer hover:text-pink transition-colors"
+      className={`flex items-center justify-between gap-3 cursor-pointer hover:text-pink transition-colors ${className}`}
     >
       <span>{label}</span>
       <span
         className={`bevel-out px-2 py-1 font-pixel text-[8px] ${
-          value
-            ? "bg-pink text-night-deep"
-            : "bg-panel text-cream"
+          value ? "bg-pink text-night-deep" : "bg-panel text-cream"
         }`}
       >
         {value ? "[ on ]" : "[ off ]"}

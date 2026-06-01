@@ -17,7 +17,7 @@ const vt323 = VT323({
 });
 
 export const metadata: Metadata = {
-  title: "pomodoro.exe ◆ lofi study",
+  title: "pomodoro.exe",
   description: "a pixel y2k lofi pomodoro app for nighttime study sessions",
 };
 

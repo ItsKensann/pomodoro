@@ -47,5 +47,23 @@ export function useTasks() {
     setTasks((prev) => prev.filter((t) => !t.done));
   }, [setTasks]);
 
-  return { tasks, add, toggle, remove, clearDone, hydrated };
+  const move = useCallback(
+    (fromId: string, toId: string, position: "before" | "after") => {
+      if (fromId === toId) return;
+      setTasks((prev) => {
+        const fromIdx = prev.findIndex((t) => t.id === fromId);
+        if (fromIdx === -1) return prev;
+        const next = [...prev];
+        const [moved] = next.splice(fromIdx, 1);
+        const toIdx = next.findIndex((t) => t.id === toId);
+        if (toIdx === -1) return prev;
+        const insertIdx = position === "after" ? toIdx + 1 : toIdx;
+        next.splice(insertIdx, 0, moved);
+        return next;
+      });
+    },
+    [setTasks],
+  );
+
+  return { tasks, add, toggle, remove, clearDone, move, hydrated };
 }

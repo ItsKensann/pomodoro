@@ -43,7 +43,7 @@ function AppContent({
   settings: Settings;
   setSettings: (next: Settings | ((prev: Settings) => Settings)) => void;
 }) {
-  const { playChime } = useAudio();
+  const { playChime, previewChime } = useAudio();
   const tasks = useTasks();
 
   const timer = useTimer(settings, {
@@ -70,6 +70,7 @@ function AppContent({
           <SettingsPanel
             settings={settings}
             setSettings={setSettings}
+            onTestChime={previewChime}
           />
         </div>
         <div className="min-h-0 flex flex-col items-center gap-3 max-w-md w-full mx-auto md:col-span-2 md:row-start-2 md:max-w-md lg:col-span-1 lg:col-start-2 lg:row-start-2 lg:max-w-none">
@@ -82,6 +83,7 @@ function AppContent({
             onToggle={tasks.toggle}
             onRemove={tasks.remove}
             onClearDone={tasks.clearDone}
+            onMove={tasks.move}
           />
         </div>
       </div>
