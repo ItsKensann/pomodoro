@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import type { UseTimerReturn } from "@/hooks/useTimer";
 import { PHASE_LABEL } from "@/lib/defaults";
+import { faviconDataUri, setFavicon } from "@/lib/favicon";
 import { Window } from "./Window";
 import { PixelButton } from "./PixelButton";
 
@@ -40,6 +41,12 @@ export function PomodoroTimer({ timer }: PomodoroTimerProps) {
       document.title = DEFAULT_DOCUMENT_TITLE;
     };
   }, [phase, remainingMs]);
+
+  // Tint the tab favicon to match the timer state: regular during focus, blue
+  // during breaks, grayed out when paused.
+  useEffect(() => {
+    setFavicon(faviconDataUri(phase, status));
+  }, [phase, status]);
 
   // Keyboard shortcuts: space = toggle start/pause, R = reset.
   useEffect(() => {
