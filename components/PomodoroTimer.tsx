@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import type { UseTimerReturn } from "@/hooks/useTimer";
 import { PHASE_LABEL } from "@/lib/defaults";
 import { faviconDataUri, setFavicon } from "@/lib/favicon";
+import { useAudio } from "./AudioController";
 import { Window } from "./Window";
 import { PixelButton } from "./PixelButton";
 
@@ -21,6 +22,7 @@ function formatTime(ms: number): string {
 }
 
 export function PomodoroTimer({ timer }: PomodoroTimerProps) {
+  const { playClick } = useAudio();
   const {
     phase,
     status,
@@ -33,6 +35,12 @@ export function PomodoroTimer({ timer }: PomodoroTimerProps) {
     skip,
     setPhase,
   } = timer;
+
+  const toggleStartPause = useCallback(() => {
+    playClick();
+    if (status === "running") pause();
+    else start();
+  }, [playClick, status, pause, start]);
 
   useEffect(() => {
     document.title = `${formatTime(remainingMs)} ${PHASE_LABEL[phase]} - pomodoro.exe`;
@@ -55,15 +63,14 @@ export function PomodoroTimer({ timer }: PomodoroTimerProps) {
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.code === "Space") {
         e.preventDefault();
-        if (status === "running") pause();
-        else start();
+        toggleStartPause();
       } else if (e.key.toLowerCase() === "r") {
         reset();
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [status, start, pause, reset]);
+  }, [toggleStartPause, reset]);
 
   const progress = totalMs > 0 ? 1 - remainingMs / totalMs : 0;
 
@@ -121,11 +128,11 @@ export function PomodoroTimer({ timer }: PomodoroTimerProps) {
         {/* Controls */}
         <div className="flex gap-2 flex-wrap justify-center">
           {status === "running" ? (
-            <PixelButton variant="primary" size="md" onClick={pause}>
+            <PixelButton variant="primary" size="md" onClick={toggleStartPause}>
               pause
             </PixelButton>
           ) : (
-            <PixelButton variant="primary" size="md" onClick={start}>
+            <PixelButton variant="primary" size="md" onClick={toggleStartPause}>
               {status === "paused" ? "resume" : "start"}
             </PixelButton>
           )}

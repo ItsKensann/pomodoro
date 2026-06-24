@@ -73,7 +73,7 @@ export function SettingsPanel({
         />
         <div className="flex items-center justify-between gap-3">
           <ToggleRow
-            label="chime sound"
+            label="sound effects"
             value={settings.soundOn}
             onToggle={() => toggle("soundOn")}
             className="flex-1"
