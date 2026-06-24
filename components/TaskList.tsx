@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { Task } from "@/lib/types";
 import { Window } from "./Window";
 import { PixelButton } from "./PixelButton";
@@ -9,6 +9,7 @@ interface TaskListProps {
   tasks: Task[];
   onAdd: (text: string) => void;
   onToggle: (id: string) => void;
+  onRename: (id: string, text: string) => void;
   onRemove: (id: string) => void;
   onClearDone: () => void;
   onMove: (fromId: string, toId: string, position: "before" | "after") => void;
@@ -20,13 +21,24 @@ export function TaskList({
   tasks,
   onAdd,
   onToggle,
+  onRename,
   onRemove,
   onClearDone,
   onMove,
 }: TaskListProps) {
   const [input, setInput] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editInput, setEditInput] = useState("");
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<DragOver>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
+  const skipBlurSaveRef = useRef(false);
+
+  useEffect(() => {
+    if (!editingId) return;
+    editInputRef.current?.focus();
+    editInputRef.current?.select();
+  }, [editingId]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,9 +46,62 @@ export function TaskList({
     setInput("");
   }
 
+  function startRename(task: Task) {
+    skipBlurSaveRef.current = false;
+    setEditingId(task.id);
+    setEditInput(task.text);
+    setDragId(null);
+    setDragOver(null);
+  }
+
+  function clearRename() {
+    setEditingId(null);
+    setEditInput("");
+  }
+
+  function commitRename(task: Task) {
+    if (skipBlurSaveRef.current) {
+      skipBlurSaveRef.current = false;
+      clearRename();
+      return;
+    }
+
+    const trimmed = editInput.trim();
+    if (trimmed && trimmed !== task.text) {
+      onRename(task.id, trimmed);
+    }
+    clearRename();
+  }
+
+  function cancelRename() {
+    skipBlurSaveRef.current = true;
+    clearRename();
+  }
+
+  function handleRenameKeyDown(
+    e: React.KeyboardEvent<HTMLInputElement>,
+    task: Task,
+  ) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commitRename(task);
+      return;
+    }
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      cancelRename();
+    }
+  }
+
   const doneCount = tasks.filter((t) => t.done).length;
 
   function handleDragStart(e: React.DragEvent<HTMLLIElement>, id: string) {
+    if (editingId === id) {
+      e.preventDefault();
+      return;
+    }
+
     setDragId(id);
     e.dataTransfer.effectAllowed = "move";
     // Firefox needs data set for drag to initiate.
@@ -107,6 +172,7 @@ export function TaskList({
           </li>
         )}
         {tasks.map((task) => {
+          const isEditing = editingId === task.id;
           const isDragging = dragId === task.id;
           const showBefore =
             !isDragging &&
@@ -125,14 +191,14 @@ export function TaskList({
                 />
               )}
               <li
-                draggable
+                draggable={!isEditing}
                 onDragStart={(e) => handleDragStart(e, task.id)}
                 onDragOver={(e) => handleDragOver(e, task.id)}
                 onDrop={(e) => handleDrop(e, task.id)}
                 onDragEnd={handleDragEnd}
                 className={`
                   flex items-center gap-2 group bevel-in bg-night px-2 py-1.5
-                  cursor-grab active:cursor-grabbing select-none
+                  ${isEditing ? "cursor-default" : "cursor-grab active:cursor-grabbing select-none"}
                   ${isDragging ? "opacity-40" : ""}
                 `}
               >
@@ -148,14 +214,47 @@ export function TaskList({
                 >
                   {task.done ? "✓" : ""}
                 </button>
-                <span
-                  className={`
-                    flex-1 font-mono text-base break-words min-w-0
-                    ${task.done ? "line-through text-mauve opacity-60" : "text-cream"}
-                  `}
-                >
-                  {task.text}
-                </span>
+                {isEditing ? (
+                  <input
+                    ref={editInputRef}
+                    type="text"
+                    value={editInput}
+                    onChange={(e) => setEditInput(e.target.value)}
+                    onBlur={() => commitRename(task)}
+                    onKeyDown={(e) => handleRenameKeyDown(e, task)}
+                    maxLength={120}
+                    className="
+                      flex-1 bevel-in bg-night-deep text-cream
+                      px-2 py-1 font-mono text-base
+                      focus:outline-none focus:text-cyan
+                      min-w-0
+                    "
+                    aria-label="rename task"
+                  />
+                ) : (
+                  <span
+                    className={`
+                      flex-1 font-mono text-base break-words min-w-0
+                      ${task.done ? "line-through text-mauve opacity-60" : "text-cream"}
+                    `}
+                  >
+                    {task.text}
+                  </span>
+                )}
+                {!isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => startRename(task)}
+                    className="
+                      shrink-0 font-pixel text-[8px] text-mauve
+                      opacity-0 group-hover:opacity-100 hover:text-cyan
+                      cursor-pointer transition-opacity
+                    "
+                    aria-label="rename task"
+                  >
+                    edit
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => onRemove(task.id)}

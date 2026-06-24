@@ -36,6 +36,17 @@ export function useTasks() {
     [setTasks],
   );
 
+  const rename = useCallback(
+    (id: string, text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      setTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, text: trimmed } : t)),
+      );
+    },
+    [setTasks],
+  );
+
   const remove = useCallback(
     (id: string) => {
       setTasks((prev) => prev.filter((t) => t.id !== id));
@@ -65,5 +76,5 @@ export function useTasks() {
     [setTasks],
   );
 
-  return { tasks, add, toggle, remove, clearDone, move, hydrated };
+  return { tasks, add, toggle, rename, remove, clearDone, move, hydrated };
 }

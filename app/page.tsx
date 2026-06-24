@@ -81,6 +81,7 @@ function AppContent({
             tasks={tasks.tasks}
             onAdd={tasks.add}
             onToggle={tasks.toggle}
+            onRename={tasks.rename}
             onRemove={tasks.remove}
             onClearDone={tasks.clearDone}
             onMove={tasks.move}
