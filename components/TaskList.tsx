@@ -17,6 +17,9 @@ interface TaskListProps {
 
 type DragOver = { id: string; pos: "before" | "after" } | null;
 
+const EDGE_SCROLL_ZONE_PX = 48;
+const EDGE_SCROLL_STEP_PX = 12;
+
 export function TaskList({
   tasks,
   onAdd,
@@ -31,6 +34,8 @@ export function TaskList({
   const [editInput, setEditInput] = useState("");
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<DragOver>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const dragOverRef = useRef<DragOver>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
   const skipBlurSaveRef = useRef(false);
 
@@ -51,7 +56,7 @@ export function TaskList({
     setEditingId(task.id);
     setEditInput(task.text);
     setDragId(null);
-    setDragOver(null);
+    setDropIntent(null);
   }
 
   function clearRename() {
@@ -108,34 +113,80 @@ export function TaskList({
     e.dataTransfer.setData("text/plain", id);
   }
 
-  function handleDragOver(e: React.DragEvent<HTMLLIElement>, id: string) {
-    if (!dragId) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (dragId === id) {
-      if (dragOver) setDragOver(null);
-      return;
+  function scrollListNearEdge(clientY: number) {
+    const list = listRef.current;
+    if (!list) return;
+
+    const rect = list.getBoundingClientRect();
+    const distanceFromTop = clientY - rect.top;
+    const distanceFromBottom = rect.bottom - clientY;
+
+    if (distanceFromTop < EDGE_SCROLL_ZONE_PX) {
+      list.scrollTop -= EDGE_SCROLL_STEP_PX;
+    } else if (distanceFromBottom < EDGE_SCROLL_ZONE_PX) {
+      list.scrollTop += EDGE_SCROLL_STEP_PX;
     }
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pos: "before" | "after" =
-      e.clientY < rect.top + rect.height / 2 ? "before" : "after";
+  }
+
+  function setDropIntent(next: DragOver) {
+    dragOverRef.current = next;
     setDragOver((prev) =>
-      prev?.id === id && prev.pos === pos ? prev : { id, pos },
+      prev?.id === next?.id && prev?.pos === next?.pos ? prev : next,
     );
   }
 
-  function handleDrop(e: React.DragEvent<HTMLLIElement>, id: string) {
+  function getDropIntent(clientY: number): DragOver {
+    const list = listRef.current;
+    if (!list || !dragId) return null;
+
+    const rows = Array.from(
+      list.querySelectorAll<HTMLLIElement>("[data-task-id]"),
+    );
+
+    for (const row of rows) {
+      const id = row.dataset.taskId;
+      if (!id) continue;
+
+      const rect = row.getBoundingClientRect();
+      const isBeforeMidpoint = clientY < rect.top + rect.height / 2;
+
+      if (isBeforeMidpoint) {
+        return id === dragId ? null : { id, pos: "before" };
+      }
+    }
+
+    const lastRow = rows.at(-1);
+    const lastId = lastRow?.dataset.taskId;
+    if (!lastId || lastId === dragId) return null;
+
+    return { id: lastId, pos: "after" };
+  }
+
+  function handleListDragOver(e: React.DragEvent<HTMLUListElement>) {
+    if (!dragId || tasks.length === 0) return;
+
     e.preventDefault();
-    if (dragId && dragId !== id && dragOver) {
-      onMove(dragId, id, dragOver.pos);
+    e.dataTransfer.dropEffect = "move";
+    scrollListNearEdge(e.clientY);
+    setDropIntent(getDropIntent(e.clientY));
+  }
+
+  function handleListDrop(e: React.DragEvent<HTMLUListElement>) {
+    if (!dragId) return;
+
+    e.preventDefault();
+    const intent = getDropIntent(e.clientY) ?? dragOverRef.current;
+
+    if (intent && dragId !== intent.id) {
+      onMove(dragId, intent.id, intent.pos);
     }
     setDragId(null);
-    setDragOver(null);
+    setDropIntent(null);
   }
 
   function handleDragEnd() {
     setDragId(null);
-    setDragOver(null);
+    setDropIntent(null);
   }
 
   return (
@@ -145,7 +196,7 @@ export function TaskList({
       className="w-full h-full flex flex-col"
       bodyClassName="flex-1 min-h-0 flex flex-col"
     >
-      <form onSubmit={submit} className="flex gap-2 mb-3 shrink-0">
+      <form onSubmit={submit} className="flex gap-2 shrink-0">
         <input
           type="text"
           value={input}
@@ -165,7 +216,12 @@ export function TaskList({
         </PixelButton>
       </form>
 
-      <ul className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-1">
+      <ul
+        ref={listRef}
+        onDragOver={handleListDragOver}
+        onDrop={handleListDrop}
+        className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pt-3 pr-1"
+      >
         {tasks.length === 0 && (
           <li className="text-mauve font-mono text-base text-center py-4 opacity-70">
             ~ no tasks yet ~
@@ -191,10 +247,9 @@ export function TaskList({
                 />
               )}
               <li
+                data-task-id={task.id}
                 draggable={!isEditing}
                 onDragStart={(e) => handleDragStart(e, task.id)}
-                onDragOver={(e) => handleDragOver(e, task.id)}
-                onDrop={(e) => handleDrop(e, task.id)}
                 onDragEnd={handleDragEnd}
                 className={`
                   flex items-center gap-2 group bevel-in bg-night px-2 py-1.5
